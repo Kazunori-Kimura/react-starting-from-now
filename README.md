@@ -154,6 +154,9 @@ singleParam => { statements }
 
 ## はじめてのReact
 
+Hello World – React
+https://ja.reactjs.org/docs/hello-world.html
+
 ### create-react-app
 
 Reactのプロジェクトを作成するには `create-react-app` コマンドを使用します。
@@ -274,7 +277,7 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         
-        {libraries.map((item => (<p>{item}</p>))}
+        {libraries.map(item => (<p>{item}</p>))}
         
         <a
           className="App-link"
@@ -292,8 +295,218 @@ function App() {
 export default App;
 ```
 
+### コンポーネント
 
-### Todoの実装
+独自のコンポーネントを定義してみます。
+
+```sh
+$ mkdir src/components
+$ touch src/components/Message.js
+```
+
+`Message.js` は簡単なメッセージを表示するコンポーネントです。
+
+```js
+import React from 'react';
+
+function Message() {
+  return (
+    <p>Original Message.</p>
+  );
+}
+
+export default Message;
+```
+
+`App.js` に `Message` コンポーネントを表示します。
+
+```js
+import React from 'react';
+import logo from './logo.svg';
+import './App.css';
+import Message from './components/Message';
+
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        
+        <Message />
+
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+> **コンポーネント名は常に大文字で始めてください。**
+> React は小文字で始まるコンポーネントを DOM タグとして扱います。
+
+### props
+
+`App` から `Message` に値を渡して、動的にメッセージを組み立ててみます。
+
+`App.js`
+
+```js
+import React from 'react';
+import logo from './logo.svg';
+import './App.css';
+import Message from './components/Message';
+
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        
+        <Message name="kimura" />
+
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+`Message` にて値を表示するように修正します。
+Reactはコンポーネントを呼び出す際に `props` というobjectに与えられた属性やタグ内の値を渡します。
+
+`Message.js`
+
+```js
+import React from 'react';
+
+function Message(props) {
+  return (
+    <p>Hello, {props.name}!</p>
+  );
+}
+
+export default Message;
+```
+
+コンポーネントは繰り返し使用できます。
+
+`App.js`
+
+```js
+import React from 'react';
+import logo from './logo.svg';
+import './App.css';
+import Message from './components/Message';
+
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        
+        <Message name="kimura" />
+        <Message name="tanaka" />
+        <Message name="suzuki" />
+
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+React は柔軟ですが、1 つだけ厳格なルールがあります：
+**自分自身の props は決して変更してはいけません。**
+
+データを更新する場合には `state` を使用します。
+
+### stateを使用する
+
+予め用意した配列ではなく、テキストボックスに名前を入力して Message コンポーネントに渡してみます。
+`state` の機能を使用するには `useState` メソッドを使用します。
+
+```js
+import React, { useState } from 'react';
+import logo from './logo.svg';
+import './App.css';
+import Message from './components/Message';
+
+function App() {
+  const [name, setName] = useState("");
+
+  const handleTextInput = (e) => {
+    setName(e.target.value);
+  };
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+
+        <div className="form">
+          <input type="text" onChange={handleTextInput} />
+        </div>
+        
+        <Message name={name} />
+
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+テキストボックスの内容が変わると `handleTextInput` メソッドが呼ばれます。
+`handleTextInput` で `setName` メソッドにテキストボックスの値を渡します。
+`name` の値が更新されると `Message` が再描画されます。
+
+------
+
+## Todoアプリの実装
+
+### Todoのデータ設計
+
+- ID: TodoごとにユニークなIDを持つ
+- Content: 内容
+- Done: 完了フラグ
+- CreatedAt: 作成日時
+- UpdatedAt: 更新日時
 
 ```
 kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial

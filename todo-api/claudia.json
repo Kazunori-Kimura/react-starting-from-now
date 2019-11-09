@@ -1,0 +1,11 @@
+{
+  "lambda": {
+    "role": "todo-api-executor",
+    "name": "todo-api",
+    "region": "ap-northeast-1"
+  },
+  "api": {
+    "id": "a1uixots8j",
+    "module": "index"
+  }
+}
