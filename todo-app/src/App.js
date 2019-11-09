@@ -1,35 +1,22 @@
 import React, { useState } from 'react';
-import logo from './logo.svg';
+
 import './App.css';
-import Message from './components/Message';
+import Todo from './components/Todo';
 
 function App() {
-  const [name, setName] = useState("");
-
-  const handleTextInput = (e) => {
-    setName(e.target.value);
-  };
+  const [todos, setTodos] = useState([
+    {
+      ID: 1,
+      Content: 'hoge',
+      Done: true,
+      CreatedBy: (new Date()).toISOString(),
+      UpdatedBy: (new Date()).toISOString(),
+    },
+  ]);
 
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-
-        <div className="form">
-          <input type="text" onChange={handleTextInput} />
-        </div>
-        
-        <Message name={name} />
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {todos.map(item => (<Todo key={item.ID} {...item} />))}
     </div>
   );
 }

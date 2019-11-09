@@ -508,19 +508,15 @@ export default App;
 - CreatedAt: 作成日時
 - UpdatedAt: 更新日時
 
+### Todoコンポーネントの作成
+
+```sh
+$ touch src/components/Todo.js
+$ touch src/components/Todo.css
 ```
-kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial
-$ cd todo-app/src
 
-kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial/todo-app/src (master)
-$ mkdir components
+`Todo.js`
 
-kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial/todo-app/src (master)
-$ touch components/Todo.js
-
-kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial/todo-app/src (master)
-$ touch components/TodoList.js
-
-kimki@DESKTOP-HSDP8B1 MINGW64 ~/Repository/react-tutorial/todo-app/src (master)
-$ touch components/TodoForm.js
+```js
 ```
+
