@@ -22,6 +22,8 @@ Reactとは Facebookが中心となってオープンソースで開発されて
 Reactの開発ではOSを選びません。
 Windows/Mac/Linuxどれでも好きな環境で開発できます。
 
+------
+
 ## Reactをはじめる前に
 
 Reactを使用する際に頻出する JavaScript (ECMAScript2015) の基本文法について確認します。
@@ -515,8 +517,132 @@ $ touch src/components/Todo.js
 $ touch src/components/Todo.css
 ```
 
+まずはスタイルを定義します。
+
+`Todo.css`
+
+```css
+.todo {
+  display: flex;
+  width: 100%;
+  height: 60px;
+  align-items: stretch;
+  border: 1px solid #ccc;
+  border-bottom: 0;
+}
+.todo:last-child {
+  border-bottom: 1px solid #ccc;
+}
+
+.todo .check {
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #00cc00;
+  font-weight: bold;
+  font-size: xx-large;
+}
+
+.todo .body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.todo .actions {
+  width: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.todo .body .header {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.todo .body .header .date {
+  font-size: x-small;
+  padding: 4px;
+}
+
+.todo .body .content {
+  padding: 4px;
+}
+
+.todo .body textarea {
+  width: calc(100% - 12px);
+  height: 100%;
+  margin: 3px;
+}
+
+.btn {
+  width: 50px;
+  height: 50px;
+  margin: 5px;
+}
+```
+
+つづいて Todoコンポーネント を作成します。
+
 `Todo.js`
 
 ```js
+import React from 'react';
+import './Todo.css';
+
+function Todo(props) {
+  return (
+    <div className="todo">
+      <div className="check">
+        {/* Doneがtrueならチェックマークを表示 */}
+        {props.Done && (<span>✓</span>)}
+      </div>
+      <div className="body">
+        <div className="header">
+          <span className="date">CreatedBy: {props.CreatedBy}</span>
+          <span className="date">UpdatedBy: {props.UpdatedBy}</span>
+        </div>
+        {/* とりあえずはcontentをそのまま表示 */}
+        <div className="content">{props.Content}</div>
+      </div>
+      <button className="btn">Edit</button>
+      <button className="btn">Delete</button>
+    </div>
+  );
+}
+
+export default Todo;
 ```
 
+`TodoForm.js`
+
+```js
+import React from 'react';
+import './Todo.css';
+
+function TodoForm(props = { Done: false, Content: '' }) {
+  return (
+    <div className="todo">
+      <div className="check">
+        <input type="checkbox" checked={props.Done} />
+      </div>
+      <div className="body">
+        <textarea>{props.Content}</textarea>
+      </div>
+      <button className="btn">Save</button>
+      {props.ID && (
+        <button className="btn">Cancel</button>
+      )}
+    </div>
+  );
+}
+
+export default TodoForm;
+```

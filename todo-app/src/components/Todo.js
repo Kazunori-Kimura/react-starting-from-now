@@ -1,7 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import TodoForm from './TodoForm';
 import './Todo.css';
 
 function Todo(props) {
+  const [edit, setEdit] = useState(false);
+
+  const handleUpdate = (data) => {
+    setEdit(false);
+    props.onSave(data);
+  };
+
+  if (edit) {
+    return (
+      <TodoForm
+        {...props}
+        onSave={handleUpdate}
+        onCancel={() => setEdit(false)}
+      />
+    );
+  }
+
   return (
     <div className="todo">
       <div className="check">
@@ -14,10 +32,8 @@ function Todo(props) {
         </div>
         <div className="content">{props.Content}</div>
       </div>
-      <div className="actions">
-        <button className="btn">Edit</button>
-        <button className="btn">Delete</button>
-      </div>
+      <button className="btn" onClick={() => setEdit(true)}>Edit</button>
+      <button className="btn" onClick={() => props.onDelete(props.ID)}>Delete</button>
     </div>
   );
 }

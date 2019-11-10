@@ -3,7 +3,11 @@
   width: 100%;
   height: 60px;
   align-items: stretch;
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
+  border-bottom: 0;
+}
+.todo:last-child {
+  border-bottom: 1px solid #ccc;
 }
 
 .todo .check {
@@ -35,20 +39,27 @@
   width: 100%;
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: flex-start;
   align-items: center;
 }
 
 .todo .body .header .date {
-  width: 200px;
-  font-size: xx-small;
+  font-size: x-small;
+  padding: 4px;
 }
 
 .todo .body .content {
-  font-size: large;
-  padding: 6px;
+  padding: 4px;
+}
+
+.todo .body textarea {
+  width: calc(100% - 12px);
+  height: 100%;
+  margin: 3px;
 }
 
 .btn {
   width: 50px;
+  height: 50px;
+  margin: 5px;
 }
