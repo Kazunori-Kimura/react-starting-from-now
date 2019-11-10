@@ -525,7 +525,7 @@ $ touch src/components/Todo.css
 .todo {
   display: flex;
   width: 100%;
-  height: 60px;
+  min-height: 60px;
   align-items: stretch;
   border: 1px solid #ccc;
   border-bottom: 0;
@@ -606,8 +606,8 @@ function Todo(props) {
       </div>
       <div className="body">
         <div className="header">
-          <span className="date">CreatedBy: {props.CreatedBy}</span>
-          <span className="date">UpdatedBy: {props.UpdatedBy}</span>
+          <span className="date">CreatedAt: {props.CreatedAt}</span>
+          <span className="date">UpdatedAt: {props.UpdatedAt}</span>
         </div>
         {/* とりあえずはcontentをそのまま表示 */}
         <div className="content">{props.Content}</div>
@@ -646,3 +646,46 @@ function TodoForm(props = { Done: false, Content: '' }) {
 
 export default TodoForm;
 ```
+
+
+
+------
+
+### APIを呼ぶ
+
+`useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出される
+
+```js
+import React, { useState, useEffect } from 'react';
+import uuid from 'uuid';
+import './App.css';
+import Todo from './components/Todo';
+import TodoForm from './components/TodoForm';
+
+const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
+
+function App() {
+  const [todos, setTodos] = useState([]);
+
+  useEffect(() => {
+    const getTodoes = async () => {
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+      });
+      
+      const res  = await response.json();
+
+      setTodos(res);
+    };
+
+    getTodoes();
+  }, []);
+
+.....
+```
+
+追加/更新/削除でもAPIを呼び出すように修正する
+
+

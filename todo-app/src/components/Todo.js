@@ -27,8 +27,8 @@ function Todo(props) {
       </div>
       <div className="body">
         <div className="header">
-          <span className="date">CreatedBy: {props.CreatedBy}</span>
-          <span className="date">UpdatedBy: {props.UpdatedBy}</span>
+          <span className="date">CreatedAt: {props.CreatedAt}</span>
+          <span className="date">UpdatedAt: {props.UpdatedAt}</span>
         </div>
         <div className="content">{props.Content}</div>
       </div>
