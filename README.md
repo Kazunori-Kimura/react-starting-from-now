@@ -451,6 +451,9 @@ React は柔軟ですが、1 つだけ厳格なルールがあります：
 
 ### stateを使用する
 
+ステートフックの利用法 – React
+https://ja.reactjs.org/docs/hooks-state.html
+
 予め用意した配列ではなく、テキストボックスに名前を入力して Message コンポーネントに渡してみます。
 `state` の機能を使用するには `useState` メソッドを使用します。
 
@@ -648,10 +651,12 @@ export default TodoForm;
 ```
 
 
-
-------
-
 ### APIを呼ぶ
+
+副作用フックの利用法 – React
+https://ja.reactjs.org/docs/hooks-effect.html
+
+> データの取得、購読の設定、あるいは React コンポーネント内の DOM の手動での変更、といったものはすべて副作用の例です。
 
 `useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出される
 
@@ -685,6 +690,21 @@ function App() {
 
 .....
 ```
+
+#### fetch
+
+Fetch API - Web API | MDN
+https://developer.mozilla.org/ja/docs/Web/API/Fetch_API
+
+> Fetch API には (ネットワーク越しの通信を含む) リソース取得のためのインターフェイスが定義されています。XMLHttpRequest と似たものではありますが、より強力で柔軟な操作が可能です。
+
+#### cors
+
+オリジン間リソース共有 (CORS) - HTTP | MDN
+https://developer.mozilla.org/ja/docs/Web/HTTP/CORS
+
+> オリジン間リソース共有 (CORS: Cross-Origin Resource Sharing) は、追加の HTTP ヘッダーを使用して、あるオリジンで動作しているウェブアプリケーションに、異なるオリジンにある選択されたリソースへのアクセス権を与えるようブラウザーに指示するための仕組みです。ウェブアプリケーションは、自分とは異なるオリジン (ドメイン、プロトコル、ポート番号) にあるリソースをリクエストするとき、オリジン間 HTTP リクエストを実行します。
+
 
 追加/更新/削除でもAPIを呼び出すように修正する
 
@@ -784,4 +804,250 @@ function App() {
 
 export default App;
 ```
+
+------
+
+### useContext
+
+コンポーネントのデータ管理の基本は `state` と `props` ですが、コンポーネントが多階層になった場合にバケツリレーのごとくデータを渡すのは非常に面倒です。
+
+そういったときに使える機能が `Context` になります。
+
+例えば、現在の認証済みユーザー・テーマ・優先言語といったデータを共有する場合に有用です。
+
+#### Contextの使用例
+
+Todoアプリにテーマ選択機能を追加してみます。
+
+`App.js`
+
+```js
+import React, { useState, useEffect, createContext } from 'react';
+import './App.css';
+import Todo from './components/Todo';
+import TodoForm from './components/TodoForm';
+
+const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
+
+// Themeごとのスタイル定義
+const Themes = {
+  light: {
+    color: '#000',
+    backgroundColor: '#fff',
+  },
+  dark: {
+    color: '#fff',
+    backgroundColor: '#000',
+  },
+};
+
+// 現在選択されているThemeを共有するContext
+export const ThemeContext = createContext(Themes.light);
+
+function App() {
+  const [todos, setTodos] = useState([]);
+  const [refresh, setRefresh] = useState(0);
+  // 現在選択されているtheme
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const getTodoes = async () => {
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+      });
+      
+      const res  = await response.json();
+
+      // 作成日時順に返す
+      setTodos(res.sort((a, b) => a.CreatedAt < b.CreatedAt ? 1 : -1));
+    };
+
+    getTodoes();
+  }, [refresh]);
+
+  const handleCreate = data => {
+    const createTodo = async () => {
+      // ID, CreatedAt, UpdatedAtはAPI側で設定される
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          "Content-Type": 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(data),
+      });
+
+      console.log(response.status);
+
+      setRefresh(Date.now());
+    };
+
+    createTodo();
+  };
+
+  const handleUpdate = data => {
+    const updateTodo = async () => {
+      const response = await fetch(`${url}/${data.ID}`, {
+        method: 'PUT',
+        mode: 'cors',
+        headers: {
+          "Content-Type": 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(data),
+      });
+
+      console.log(response.status);
+
+      setRefresh(Date.now());
+    };
+
+    updateTodo();
+  };
+
+  const handleDelete = id => {
+    const deleteTodo = async () => {
+      const response = await fetch(`${url}/${id}`, {
+        method: 'DELETE',
+        mode: 'cors',
+      });
+
+      console.log(response.status);
+
+      setRefresh(Date.now());
+    };
+
+    deleteTodo();
+  };
+
+  const handleTheme = (e) => {
+    setTheme(e.target.value);
+  };
+
+  return (
+    <div className="App">
+      {/* Providerの配下でContextが共有される */}
+      <ThemeContext.Provider value={Themes[theme]}>
+        {/* Themeの選択 */}
+        <div className="theme-selector">
+          <label><input type="radio" name="theme" value="light" defaultChecked={theme === 'light'} onChange={handleTheme} />Light</label>
+          <label><input type="radio" name="theme" value="dark" defaultChecked={theme === 'dark'} onChange={handleTheme} />Dark</label>
+        </div>
+
+        <TodoForm onSave={handleCreate} />
+
+        {todos.map(item => (
+          <Todo key={item.ID} {...item} onSave={handleUpdate} onDelete={handleDelete} />)
+        )}
+      </ThemeContext.Provider>
+    </div>
+  );
+}
+
+export default App;
+
+```
+
+
+`Todo.js`
+
+```js
+import React, { useState, useContext } from 'react';
+import TodoForm from './TodoForm';
+import './Todo.css';
+
+import { ThemeContext } from '../App';
+
+function Todo(props) {
+  const [edit, setEdit] = useState(false);
+  const theme = useContext(ThemeContext);
+
+  const handleUpdate = (data) => {
+    setEdit(false);
+    props.onSave(data);
+  };
+
+  if (edit) {
+    return (
+      <TodoForm
+        {...props}
+        onSave={handleUpdate}
+        onCancel={() => setEdit(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="todo" style={theme}>
+      <div className="check">
+        {props.Done && (<span>✓</span>)}
+      </div>
+      <div className="body">
+        <div className="header">
+          <span className="date">CreatedAt: {props.CreatedAt}</span>
+          <span className="date">UpdatedAt: {props.UpdatedAt}</span>
+        </div>
+        <div className="content">{props.Content}</div>
+      </div>
+      <button className="btn" onClick={() => setEdit(true)}>Edit</button>
+      <button className="btn" onClick={() => props.onDelete(props.ID)}>Delete</button>
+    </div>
+  );
+}
+
+export default Todo;
+
+```
+
+`TodoForm.js`
+
+```js
+import React, { useState, useContext } from 'react';
+import './Todo.css';
+
+import { ThemeContext } from '../App';
+
+function TodoForm(props = { Done: false, Content: '' }) {
+  const [done, setDone] = useState(!!props.Done);
+  const [content, setContent] = useState(props.Content || '');
+  const theme = useContext(ThemeContext);
+
+  const handleSave = () => {
+    const id = props.ID || 'hoge';
+    props.onSave({
+      ...props,
+      ID: id,
+      Done: done,
+      Content: content,
+    });
+
+    setDone(false);
+    setContent('');
+  };
+
+  return (
+    <div className="todo" style={theme}>
+      <div className="check">
+        <input type="checkbox" checked={done} onChange={e => setDone(e.target.checked)} />
+      </div>
+      <div className="body">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+      </div>
+      <button className="btn" onClick={handleSave}>Save</button>
+      {props.ID && (
+        <button className="btn" onClick={props.onCancel}>Cancel</button>
+      )}
+    </div>
+  );
+}
+
+export default TodoForm;
+
+```
+
+`App.js` のラジオボタンを変更すると各Todo、Formのテーマが切り替わります。
 

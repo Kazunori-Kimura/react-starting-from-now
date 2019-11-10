@@ -1,13 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import './App.css';
 import Todo from './components/Todo';
 import TodoForm from './components/TodoForm';
 
 const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
 
+// Themeごとのスタイル定義
+const Themes = {
+  light: {
+    color: '#000',
+    backgroundColor: '#fff',
+  },
+  dark: {
+    color: '#fff',
+    backgroundColor: '#000',
+  },
+};
+
+// 現在選択されているThemeを共有するContext
+export const ThemeContext = createContext(Themes.light);
+
 function App() {
   const [todos, setTodos] = useState([]);
   const [refresh, setRefresh] = useState(0);
+  // 現在選択されているtheme
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     const getTodoes = async () => {
@@ -80,13 +97,26 @@ function App() {
     deleteTodo();
   };
 
+  const handleTheme = (e) => {
+    setTheme(e.target.value);
+  };
+
   return (
     <div className="App">
-      <TodoForm onSave={handleCreate} />
+      {/* Providerの配下でContextが共有される */}
+      <ThemeContext.Provider value={Themes[theme]}>
+        {/* Themeの選択 */}
+        <div className="theme-selector">
+          <label><input type="radio" name="theme" value="light" defaultChecked={theme === 'light'} onChange={handleTheme} />Light</label>
+          <label><input type="radio" name="theme" value="dark" defaultChecked={theme === 'dark'} onChange={handleTheme} />Dark</label>
+        </div>
 
-      {todos.map(item => (
-        <Todo key={item.ID} {...item} onSave={handleUpdate} onDelete={handleDelete} />)
-      )}
+        <TodoForm onSave={handleCreate} />
+
+        {todos.map(item => (
+          <Todo key={item.ID} {...item} onSave={handleUpdate} onDelete={handleDelete} />)
+        )}
+      </ThemeContext.Provider>
     </div>
   );
 }

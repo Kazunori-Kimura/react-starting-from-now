@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import './Todo.css';
+
+import { ThemeContext } from '../App';
 
 function TodoForm(props = { Done: false, Content: '' }) {
   const [done, setDone] = useState(!!props.Done);
   const [content, setContent] = useState(props.Content || '');
+  const theme = useContext(ThemeContext);
 
   const handleSave = () => {
     const id = props.ID || 'hoge';
@@ -19,7 +22,7 @@ function TodoForm(props = { Done: false, Content: '' }) {
   };
 
   return (
-    <div className="todo">
+    <div className="todo" style={theme}>
       <div className="check">
         <input type="checkbox" checked={done} onChange={e => setDone(e.target.checked)} />
       </div>

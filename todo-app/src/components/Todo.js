@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import TodoForm from './TodoForm';
 import './Todo.css';
 
+import { ThemeContext } from '../App';
+
 function Todo(props) {
   const [edit, setEdit] = useState(false);
+  const theme = useContext(ThemeContext);
 
   const handleUpdate = (data) => {
     setEdit(false);
@@ -21,7 +24,7 @@ function Todo(props) {
   }
 
   return (
-    <div className="todo">
+    <div className="todo" style={theme}>
       <div className="check">
         {props.Done && (<span>✓</span>)}
       </div>
