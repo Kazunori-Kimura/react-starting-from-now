@@ -372,7 +372,6 @@ AppファンクションはHTMLのようなものを返却しています。こ�
 
 ```js
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 function App() {
@@ -381,18 +380,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <p>
-          {name}
+          {message}
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -401,11 +391,13 @@ function App() {
 export default App;
 ```
 
+ファイルを保存すると、自動的にブラウザがリロードされて変更が反映されます。
+(ここではaタグ, imgタグは不要なので削除しておきます)
+
 あらゆる有効な JavaScript の式を JSX 内で中括弧に囲んで使用できます。
 
 ```js
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 function App() {
@@ -418,18 +410,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        
         {libraries.map(item => (<p>{item}</p>))}
-        
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -465,7 +446,6 @@ export default Message;
 
 ```js
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Message from './components/Message';
 
@@ -473,18 +453,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        
         <Message />
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -494,9 +463,8 @@ export default App;
 ```
 
 > **コンポーネント名は常に大文字で始めてください。**
-> React は小文字で始まるコンポーネントを DOM タグとして扱います。
 
-### props
+### コンポーネントに値を渡す: props
 
 `App` から `Message` に値を渡して、動的にメッセージを組み立ててみます。
 
@@ -504,7 +472,6 @@ export default App;
 
 ```js
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Message from './components/Message';
 
@@ -512,18 +479,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        
         <Message name="kimura" />
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -555,7 +511,6 @@ export default Message;
 
 ```js
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Message from './components/Message';
 
@@ -563,20 +518,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        
         <Message name="kimura" />
         <Message name="tanaka" />
         <Message name="suzuki" />
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -588,19 +532,17 @@ export default App;
 React は柔軟ですが、1 つだけ厳格なルールがあります：
 **自分自身の props は決して変更してはいけません。**
 
-データを更新する場合には `state` を使用します。
-
-### stateを使用する
+### ユーザーの入力を扱う: state
 
 ステートフックの利用法 – React
 https://ja.reactjs.org/docs/hooks-state.html
 
-予め用意した配列ではなく、テキストボックスに名前を入力して Message コンポーネントに渡してみます。
+予め用意した文字列ではなく、テキストボックスに名前を入力して `Message` コンポーネントに渡してみます。
+
 `state` の機能を使用するには `useState` メソッドを使用します。
 
 ```js
 import React, { useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Message from './components/Message';
 
@@ -614,22 +556,11 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-
         <div className="form">
           <input type="text" onChange={handleTextInput} />
         </div>
         
         <Message name={name} />
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
     </div>
   );
@@ -642,11 +573,78 @@ export default App;
 `handleTextInput` で `setName` メソッドにテキストボックスの値を渡します。
 `name` の値が更新されると `Message` が再描画されます。
 
+### 子から親に値を渡す
+
+フォームをコンポーネント化することを考えます。
+
+```sh
+$ touch src/components/NameForm.js
+```
+
+子から親にデータを渡すためには、`props` にコールバック関数を渡します。
+子にて `props` に渡されたコールバック関数を実行します。
+
+`NameForm.js`
+
+```js
+import React from 'react';
+
+function NameForm(props) {
+  const handleTextInput = (e) => {
+    props.onChangeName(e.target.value);
+  };
+
+  return (
+    <div className="form">
+      <input type="text"
+        value={props.name}
+        onChange={handleTextInput} />
+    </div>
+  );
+}
+
+export default NameForm;
+```
+
+`App.js`
+
+```js
+import React, { useState } from 'react';
+import './App.css';
+import Message from './components/Message';
+import NameForm from './components/NameForm';
+
+function App() {
+  const [name, setName] = useState("");
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <NameForm name={name}
+          onChangeName={value => setName(value)} />
+        
+        <Message name={name} />
+      </header>
+    </div>
+  );
+}
+
+export default App;
+```
+
+Reactではこのようにバケツリレーのようにして親から子に、子から親にデータを渡していきます。
+
 ------
 
 ## Todoアプリの実装
 
+それでは、もう少し複雑なアプリの開発を通してReactについて解説していきます。
+
+今回はTodoアプリを作成します。
+
 ### Todoのデータ設計
+
+Todoは以下の項目を持つものとします。
 
 - ID: TodoごとにユニークなIDを持つ
 - Content: 内容
@@ -654,7 +652,26 @@ export default App;
 - CreatedAt: 作成日時
 - UpdatedAt: 更新日時
 
+### 下準備
+
+`App.css` の内容を修正しておきます。
+
+```css
+.App {
+  padding: 10px;
+}
+
+.theme-selector {
+  padding: 10px;
+}
+.theme-selector label {
+  margin-left: 20px;
+}
+```
+
 ### Todoコンポーネントの作成
+
+では、Todoコンポーネントを実装していきます。
 
 ```sh
 $ touch src/components/Todo.js
@@ -753,7 +770,7 @@ function Todo(props) {
           <span className="date">CreatedAt: {props.CreatedAt}</span>
           <span className="date">UpdatedAt: {props.UpdatedAt}</span>
         </div>
-        {/* とりあえずはcontentをそのまま表示 */}
+        {/* contentをそのまま表示 */}
         <div className="content">{props.Content}</div>
       </div>
       <button className="btn">Edit</button>
@@ -765,25 +782,80 @@ function Todo(props) {
 export default Todo;
 ```
 
+`App.js` を修正し、いくつかTodoを表示してみます。
+
+```js
+import React, { useState } from 'react';
+import './App.css';
+import Todo from './components/Todo';
+
+function App() {
+  const [todos, setTodos] = useState([
+    {
+      ID: 1,
+      Content: 'hoge',
+      Done: true,
+      CreatedBy: (new Date()).toISOString(),
+      UpdatedBy: (new Date()).toISOString(),
+    },
+  ]);
+
+
+  return (
+    <div className="App">
+      {todos.map(item => (
+        <Todo key={item.ID} {...item} />
+      ))}
+    </div>
+  );
+}
+
+export default App;
+```
+
+コンポーネントを `map` メソッドなどで複数登録する場合、Reactが個々のコンポーネントを区別できるように `key` プロパティを指定する必要があります。
+
+この状態で表示内容を確認してください。 **hoge** という項目が一つ表示されているはずです。
+
+### Todoの追加
+
+Todoを追加する機能を実装していきます。
+`TodoForm` コンポーネントを作成します。
+
+```sh
+$ touch src/components/TodoForm.js
+```
+
 `TodoForm.js`
 
 ```js
-import React from 'react';
+import React, { useState } from 'react';
 import './Todo.css';
 
-function TodoForm(props = { Done: false, Content: '' }) {
+function TodoForm(props = { Done: false, Content: '', onSave = () => {} }) {
+  const [done, setDone] = useState(!!props.Done);
+  const [content, setContent] = useState(props.Content);
+
+  const handleSave = () => {
+    const data = {
+      Done: done,
+      Content: content,
+    };
+
+    props.onSave(data);
+  };
+
   return (
     <div className="todo">
       <div className="check">
-        <input type="checkbox" checked={props.Done} />
+        <input type="checkbox" checked={done}
+          onChange={e => setDone(e.target.checked)} />
       </div>
       <div className="body">
-        <textarea>{props.Content}</textarea>
+        <textarea value={content}
+          onChange={e => setContent(e.target.value)} />
       </div>
-      <button className="btn">Save</button>
-      {props.ID && (
-        <button className="btn">Cancel</button>
-      )}
+      <button className="btn" onClick={handleSave}>Save</button>
     </div>
   );
 }
@@ -791,6 +863,59 @@ function TodoForm(props = { Done: false, Content: '' }) {
 export default TodoForm;
 ```
 
+`App` に `TodoForm` を追加します。
+`TodoForm` の `Save` ボタンが押されたらその結果を `state` の配列に追加します。
+
+まず、TodoのIDを重複なく採番するために、 `uuid` というパッケージをインストールします。
+
+```sh
+$ npm install --save uuid
+```
+
+`App.js` に登録処理を追加します。
+
+```js
+import React, { useState } from 'react';
+import uuid from 'uuid';
+import './App.css';
+import Todo from './components/Todo';
+import TodoForm from './components/TodoForm';
+
+function App() {
+  const [todos, setTodos] = useState([
+    {
+      ID: 1,
+      Content: 'hoge',
+      Done: true,
+      CreatedBy: (new Date()).toISOString(),
+      UpdatedBy: (new Date()).toISOString(),
+    },
+  ]);
+
+  const handleCreate = data => {
+    // IDを採番
+    data.ID = uuid.v4();
+    // 現在日時を取得
+    const now = (new Date()).toISOString();
+    data.CreatedBy = now;
+    data.UpdatedBy = now;
+    // 末尾に追加
+    setTodos([...todos, data]);
+  };
+
+  return (
+    <div className="App">
+      <TodoForm onSave={handleCreate} />
+
+      {todos.map(item => (
+        <Todo key={item.ID} {...item} />)
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
 
 ### APIを呼ぶ
 
