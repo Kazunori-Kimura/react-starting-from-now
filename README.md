@@ -93,6 +93,8 @@ console.log(number);
 // expected output: 42
 ```
 
+objectのプロパティなどは変更できます。
+
 ```js
 const obj = {
   number: 42,
@@ -150,6 +152,145 @@ singleParam => { statements }
 
 // 引数がない場合、丸括弧を書かねばいけません:
 () => { statements }
+```
+
+
+### スプレッド構文 `...`
+
+> *スプレッド構文 - JavaScript | MDN* https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Spread_syntax
+> スプレッド構文を使うと、関数呼び出しでは 0 個以上の引数として、Array リテラルでは 0 個以上の要素として、Object リテラルでは 0 個以上の key-value のペアとして、Array や String などの iterable オブジェクトをその場で展開します。
+
+```js
+// 配列の展開
+const arr1 = [1, 2, 3];
+const arr2 = [4, 5, ...arr1];
+console.log(arr2);
+// => [4, 5, 1, 2, 3];
+
+// オブジェクトの展開 (ECMAScript 2018以降)
+const obj1 = { firstName: 'kazunori', familyName: 'kimura' };
+const obj2 = { ...obj1, age: 40 };
+console.log(obj2);
+// => { firstName: 'kazunori', familyName: 'kimura', age: 40 }
+
+// 関数の引数
+const sum = (...args) => {
+  // 引数が args という配列に格納される
+  let value = 0;
+  args.forEach(arg => value += arg);
+  return value;
+};
+
+console.log(sum(1, 3, 5, 7));
+// => 16
+
+// 関数の呼び出し
+const multi = (a, b) => {
+  return a * b;
+}
+
+const arr = [3, 5, 7];
+console.log(multi(...arr));
+// => 15
+```
+
+### 分割代入 (Destructuring assignment)
+
+> *分割代入 - JavaScript | MDN* https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
+> 分割代入 (Destructuring assignment) 構文は、配列から値を取り出して、あるいはオブジェクトからプロパティを取り出して別個の変数に代入することを可能にする JavaScript の式です。
+
+#### 配列の分割代入
+
+```js
+const [one, two] = [1, 2, 3, 4];
+console.log(one); // => 1
+console.log(two); // => 2
+
+const [a, b, c] = [1, 2];
+console.log(a); // => 1
+console.log(b); // => 2
+console.log(c); // => undefined
+```
+
+```js
+// 既定値の設定
+const [a, b = 4, c = 5] = [1, 2];
+console.log(a); // => 1
+console.log(b); // => 2
+console.log(c); // => 5
+```
+
+```js
+// スプレッド構文との組み合わせ
+const [a, b, ...arr] = [1, 2, 3, 4, 5]; // [a, b, ...arr,] <= 余剰なカンマはエラーとなる
+console.log(a); // => 1
+console.log(b); // => 2
+console.log(arr); // => [3, 4, 5]
+```
+
+#### TIPS: Tupleの代替
+
+分割代入によって他言語にある `Tuple` に似た機能を実装できます。
+
+```js
+const calc = (a, b) => {
+  return [a + b, a * b];
+};
+
+const [sum, multi] = calc(3, 5);
+console.log(sum); // => 8
+console.log(multi); // => 15
+
+// 掛け算の結果だけほしい
+const [, m] = calc(4, 8);
+console.log(m); // => 32
+```
+
+#### TIPS: 変数の入れ替え
+
+配列の分割代入を使用すると、変数の値の入れ替えが簡単に行えます。
+
+```js
+let a = 1;
+let b = 2;
+[a, b] = [b, a];
+console.log(a); // => 2
+console.log(b); // => 1
+```
+
+#### オブジェクトの分割代入
+
+配列の分割代入とイメージは大差ありません。
+
+```js
+const obj = { name: 'kimura', age: 40 };
+const { name } = obj;
+console.log(name); // => kimura
+```
+
+オブジェクトから変数を取り出して、オブジェクトのプロパティとは異なる名前を持つ変数に代入できます
+
+```js
+const obj = { name: 'kimura', age: 40 };
+const { name: userName } = obj;
+console.log(userName); // => kimura
+```
+
+#### TIPS 関数の引数に既定値を設定する
+
+関数の引数にオブジェクトを渡すようにすることで、名前付き引数のような機能を実現できます。
+また、既定値を設定することで省略可能な引数を定義できます。
+
+```js
+const drawRect = ({ width = 100, height = 100, position = { x: 0, y: 0 } } = {}) => {
+  return `x1=${position.x},y1=${position.y},x2=${position.x + width},y2=${position.y + height}`;
+};
+
+console.log(drawRect());
+// => x1=0,y1=0,x2=100,y2=100
+
+console.log(drawRect({ width: 200, position: {x: 50, y: 100} }));
+// => x1=50,y1=100,x2=250,y2=200
 ```
 
 ------
