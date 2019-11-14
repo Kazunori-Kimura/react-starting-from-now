@@ -917,6 +917,220 @@ function App() {
 export default App;
 ```
 
+ここまで実装して、Todoが追加されることを確認します。
+
+### Todoを削除する
+
+TodoコンポーネントにあるDeleteボタンをクリックすると該当のTodoが削除されるように実装していきます。
+
+`App.js` に削除処理を追加します。
+
+```js
+import React, { useState } from 'react';
+import uuid from 'uuid';
+import './App.css';
+import Todo from './components/Todo';
+import TodoForm from './components/TodoForm';
+
+function App() {
+  const [todos, setTodos] = useState([
+    {
+      ID: 1,
+      Content: 'hoge',
+      Done: true,
+      CreatedBy: (new Date()).toISOString(),
+      UpdatedBy: (new Date()).toISOString(),
+    },
+  ]);
+
+  const handleCreate = data => {
+    // IDを採番
+    data.ID = uuid.v4();
+    // 現在日時を取得
+    const now = (new Date()).toISOString();
+    data.CreatedBy = now;
+    data.UpdatedBy = now;
+    // 末尾に追加
+    setTodos([...todos, data]);
+  };
+
+  const handleDelete = id => {
+    // IDが一致する項目のindexを取得
+    const index = todos.findIndex(item => item.ID === id);
+    if (index >= 0) {
+      // 新しい配列を生成
+      const newList = [...todos];
+      // 配列から該当要素を削除
+      newList.splice(index, 1);
+      // stateに反映
+      setTodos(newList);
+    }
+  };
+
+  return (
+    <div className="App">
+      <TodoForm onSave={handleCreate} />
+
+      {todos.map(item => (
+        <Todo key={item.ID} {...item}
+          onDelete={handleDelete}
+        />)
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+`handleDelete` を定義し、`Todo` コンポーネントに渡します。
+
+`Todo.js`
+
+```js
+import React from 'react';
+import './Todo.css';
+
+function Todo(props) {
+  return (
+    <div className="todo">
+      <div className="check">
+        {/* Doneがtrueならチェックマークを表示 */}
+        {props.Done && (<span>✓</span>)}
+      </div>
+      <div className="body">
+        <div className="header">
+          <span className="date">CreatedAt: {props.CreatedAt}</span>
+          <span className="date">UpdatedAt: {props.UpdatedAt}</span>
+        </div>
+        {/* contentをそのまま表示 */}
+        <div className="content">{props.Content}</div>
+      </div>
+      <button className="btn">Edit</button>
+      <button className="btn" onClick={() => props.onDelete(props.ID)}>Delete</button>
+    </div>
+  );
+}
+
+export default Todo;
+```
+
+Deleteボタンのクリック時に `App` から渡された `onDelete` メソッドを実行します。
+その際、TodoのIDを引数に渡します。
+
+削除処理が正常に動くことを確認します。
+
+### Todoを更新する
+
+更新処理は少し複雑です。
+ひとつずつ実装していきます。
+
+#### 編集モードの切り替え
+
+まず、TodoコンポーネントのEditボタンをクリックすると、該当Todoが編集モードに切り替わるように実装します。
+
+`Todo.js`
+
+```js
+import React, { useState } from 'react';
+import TodoForm from './TodoForm';
+import './Todo.css';
+
+function Todo(props) {
+  const [edit, setEdit] = useState(false);
+
+  if (edit) {
+    return (
+      <TodoForm
+        {...props}
+        onSave={() => {})}
+      />
+    );
+  }
+
+  return (
+    <div className="todo">
+      <div className="check">
+        {props.Done && (<span>✓</span>)}
+      </div>
+      <div className="body">
+        <div className="header">
+          <span className="date">CreatedBy: {props.CreatedBy}</span>
+          <span className="date">UpdatedBy: {props.UpdatedBy}</span>
+        </div>
+        <div className="content">{props.Content}</div>
+      </div>
+      <button className="btn" onClick={() => setEdit(true)}>Edit</button>
+      <button className="btn" onClick={() => props.onDelete(props.ID)}>Delete</button>
+    </div>
+  );
+}
+
+export default Todo;
+```
+
+編集モードのフラグをstateで管理します。
+初期値は `false` としておきます。
+
+編集モードの場合は従来のTodoコンポーネントの変わりに `TodoForm` コンポーネントを表示するようにします。
+`TodoForm` には `Todo` コンポーネントが受け取った `props` を展開してセットします。
+`onSave` にはとりあえず空の関数を渡しておきます。
+
+Editボタンをクリックしたら `edit` の値を `true` に変更するように実装します。
+
+この状態で、Editボタンをクリックしたら編集モードに切り替わることを確認します。
+
+#### 編集モードのキャンセル
+
+`TodoForm` コンポーネントにキャンセルボタンを追加し、キャンセルボタンがクリックされたら編集モードが解除されるように実装します。
+
+まずは `TodoForm` にキャンセルボタンを実装します。
+
+```js
+import React, { useState } from 'react';
+import './Todo.css';
+
+function TodoForm(props = { Done: false, Content: '' }) {
+  const [done, setDone] = useState(!!props.Done);
+  const [content, setContent] = useState(props.Content || '');
+
+  const handleSave = () => {
+    const id = props.ID || 'hoge';
+    props.onSave({
+      ...props,
+      ID: id,
+      Done: done,
+      Content: content,
+    });
+
+    setDone(false);
+    setContent('');
+  };
+
+  return (
+    <div className="todo">
+      <div className="check">
+        <input type="checkbox" checked={done} onChange={e => setDone(e.target.checked)} />
+      </div>
+      <div className="body">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+      </div>
+      <button className="btn" onClick={handleSave}>Save</button>
+      {props.ID && (
+        <button className="btn" onClick={props.onCancel}>Cancel</button>
+      )}
+    </div>
+  );
+}
+
+export default TodoForm;
+```
+
+最上位にある登録フォームにはキャンセルボタンが不要なので、`ID`の有無で登録か編集かを判定します。
+
 ### APIを呼ぶ
 
 副作用フックの利用法 – React
