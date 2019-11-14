@@ -1287,14 +1287,27 @@ function TodoForm(props = { Done: false, Content: '' }) {
 
 追加、更新、削除が問題なく動作することを確認してください。
 
-### APIを呼ぶ
+### WebAPIとの連携
 
-副作用フックの利用法 – React
-https://ja.reactjs.org/docs/hooks-effect.html
+ここまではクライアントサイドの実装のみでしたので、データを保持する手段がなく、リロードすると登録したTodoの内容が消えてしまいます。
 
+ここからはWebAPIと連携することでTodoを保存できるように実装していきます。
+
+#### WebAPIについて
+
+今回はあらかじめ簡単なWebAPIをAWS上に作成しました。
+APIの詳細は以下を確認してください。
+
+SwaggerHub
+https://app.swaggerhub.com/apis/Kazunori-Kimura/TodoAPI/1
+
+#### データの取得
+
+`fetch` メソッドを使用して、WebAPIからデータを取得します。
+外部から取得したデータを反映するには、**副作用フック (Effect Hook)** を使用します。
+
+> 副作用フックの利用法 – React (https://ja.reactjs.org/docs/hooks-effect.html)
 > データの取得、購読の設定、あるいは React コンポーネント内の DOM の手動での変更、といったものはすべて副作用の例です。
-
-`useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出されます。
 
 ```js
 import React, { useState, useEffect } from 'react';
@@ -1303,7 +1316,7 @@ import './App.css';
 import Todo from './components/Todo';
 import TodoForm from './components/TodoForm';
 
-const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
+const url = 'https://hogehoge.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
 
 function App() {
   const [todos, setTodos] = useState([]);
@@ -1324,25 +1337,91 @@ function App() {
     getTodoes();
   }, []);
 
-.....
+// ... 省略 ..
 ```
 
-#### fetch
+`useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出されます。
 
-Fetch API - Web API | MDN
-https://developer.mozilla.org/ja/docs/Web/API/Fetch_API
+#### 補足: fetch
 
+> Fetch API - Web API | MDN (https://developer.mozilla.org/ja/docs/Web/API/Fetch_API)
 > Fetch API には (ネットワーク越しの通信を含む) リソース取得のためのインターフェイスが定義されています。XMLHttpRequest と似たものではありますが、より強力で柔軟な操作が可能です。
 
-#### cors
+#### 補足: cors
 
-オリジン間リソース共有 (CORS) - HTTP | MDN
-https://developer.mozilla.org/ja/docs/Web/HTTP/CORS
-
+> オリジン間リソース共有 (CORS) - HTTP | MDN (https://developer.mozilla.org/ja/docs/Web/HTTP/CORS)
 > オリジン間リソース共有 (CORS: Cross-Origin Resource Sharing) は、追加の HTTP ヘッダーを使用して、あるオリジンで動作しているウェブアプリケーションに、異なるオリジンにある選択されたリソースへのアクセス権を与えるようブラウザーに指示するための仕組みです。ウェブアプリケーションは、自分とは異なるオリジン (ドメイン、プロトコル、ポート番号) にあるリソースをリクエストするとき、オリジン間 HTTP リクエストを実行します。
 
+#### データの更新
 
-追加/更新/削除でもAPIを呼び出すように修正する
+追加/更新/削除でもAPIを呼び出すように修正します。
+
+`App.js`
+
+```js
+// ... 省略 ...
+
+  const handleCreate = data => {
+    const createTodo = async () => {
+      // ID, CreatedAt, UpdatedAtはAPI側で設定される
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          "Content-Type": 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(data),
+      });
+
+      console.log(response.status);
+    };
+
+    createTodo();
+  };
+
+  const handleUpdate = data => {
+    const updateTodo = async () => {
+      const response = await fetch(`${url}/${data.ID}`, {
+        method: 'PUT',
+        mode: 'cors',
+        headers: {
+          "Content-Type": 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(data),
+      });
+
+      console.log(response.status);
+    };
+
+    updateTodo();
+  };
+
+  const handleDelete = id => {
+    const deleteTodo = async () => {
+      const response = await fetch(`${url}/${id}`, {
+        method: 'DELETE',
+        mode: 'cors',
+      });
+
+      console.log(response.status);
+    };
+
+    deleteTodo();
+  };
+
+  // ... 省略 ...
+```
+
+Google Chromeの開発者ツールを表示した状態で実行してみてください。
+登録/更新/削除処理は成功するものの、画面には反映されないと思います。
+画面をリロードすれば取得処理が実行され、登録/更新/削除した内容が反映されます。
+
+
+都度画面をリロードしなければならないのは不便なので、登録/更新/削除が完了したら自動的に取得処理が実行されるように実装します。
+
+`useEffect` の第2引数にstateから取得した変数を与えます。
+`useEffect` は第2引数の値が変わる度に呼び出されますので、stateを更新すればリストが更新されるようになります。
+
 
 ```js
 import React, { useState, useEffect } from 'react';
@@ -1350,11 +1429,11 @@ import './App.css';
 import Todo from './components/Todo';
 import TodoForm from './components/TodoForm';
 
-const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
+const url = 'https://hogehoge.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
 
 function App() {
   const [todos, setTodos] = useState([]);
-  const [refresh, setRefresh] = useState(0);
+  const [refresh, setRefresh] = useState(0); // リフレッシュ用のstate
 
   useEffect(() => {
     const getTodoes = async () => {
@@ -1371,7 +1450,7 @@ function App() {
     };
 
     getTodoes();
-  }, [refresh]);
+  }, [refresh]); // useEffectの第2引数にリフレッシュ用stateをセット
 
   const handleCreate = data => {
     const createTodo = async () => {
@@ -1387,7 +1466,7 @@ function App() {
 
       console.log(response.status);
 
-      setRefresh(Date.now());
+      setRefresh(Date.now()); // リフレッシュ用stateの値を更新
     };
 
     createTodo();
@@ -1406,7 +1485,7 @@ function App() {
 
       console.log(response.status);
 
-      setRefresh(Date.now());
+      setRefresh(Date.now()); // リフレッシュ用stateの値を更新
     };
 
     updateTodo();
@@ -1421,51 +1500,42 @@ function App() {
 
       console.log(response.status);
 
-      setRefresh(Date.now());
+      setRefresh(Date.now()); // リフレッシュ用stateの値を更新
     };
 
     deleteTodo();
   };
 
-  return (
-    <div className="App">
-      <TodoForm onSave={handleCreate} />
-
-      {todos.map(item => (
-        <Todo key={item.ID} {...item} onSave={handleUpdate} onDelete={handleDelete} />)
-      )}
-    </div>
-  );
-}
-
-export default App;
+  // ... 省略 ...
 ```
+
+これで登録/更新/削除するたびにリストが更新されるようになりました。
 
 ------
 
-### useContext
+### Contextフック
 
 コンポーネントのデータ管理の基本は `state` と `props` ですが、コンポーネントが多階層になった場合にバケツリレーのごとくデータを渡すのは非常に面倒です。
 
-そういったときに使える機能が `Context` になります。
+そういったときに使える機能が `Context Hook` になります。
 
 例えば、現在の認証済みユーザー・テーマ・優先言語といったデータを共有する場合に有用です。
 
 #### Contextの使用例
 
-Todoアプリにテーマ選択機能を追加してみます。
+今回はTodoアプリにテーマ選択機能を追加してみます。
 
 `App.js`
 
 ```js
-import React, { useState, useEffect, createContext } from 'react';
+import React, { useState, useEffect, createContext } from 'react'; // createContextを追加
 import './App.css';
 import Todo from './components/Todo';
 import TodoForm from './components/TodoForm';
 
-const url = 'https://a1uixots8j.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
+const url = 'https://hogehoge.execute-api.ap-northeast-1.amazonaws.com/latest/todo';
 
-// Themeごとのスタイル定義
+// テーマごとのスタイル定義
 const Themes = {
   light: {
     color: '#000',
@@ -1477,86 +1547,19 @@ const Themes = {
   },
 };
 
-// 現在選択されているThemeを共有するContext
+// 現在選択されているテーマを共有するContext
+// exportして他コンポーネントからも参照できるようにする
 export const ThemeContext = createContext(Themes.light);
 
 function App() {
   const [todos, setTodos] = useState([]);
   const [refresh, setRefresh] = useState(0);
-  // 現在選択されているtheme
+  // 現在選択されているテーマを管理するstate
   const [theme, setTheme] = useState('light');
 
-  useEffect(() => {
-    const getTodoes = async () => {
-      const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        cache: 'no-cache',
-      });
-      
-      const res  = await response.json();
+  // ... 省略 ...
 
-      // 作成日時順に返す
-      setTodos(res.sort((a, b) => a.CreatedAt < b.CreatedAt ? 1 : -1));
-    };
-
-    getTodoes();
-  }, [refresh]);
-
-  const handleCreate = data => {
-    const createTodo = async () => {
-      // ID, CreatedAt, UpdatedAtはAPI側で設定される
-      const response = await fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          "Content-Type": 'application/json; charset=utf-8',
-        },
-        body: JSON.stringify(data),
-      });
-
-      console.log(response.status);
-
-      setRefresh(Date.now());
-    };
-
-    createTodo();
-  };
-
-  const handleUpdate = data => {
-    const updateTodo = async () => {
-      const response = await fetch(`${url}/${data.ID}`, {
-        method: 'PUT',
-        mode: 'cors',
-        headers: {
-          "Content-Type": 'application/json; charset=utf-8',
-        },
-        body: JSON.stringify(data),
-      });
-
-      console.log(response.status);
-
-      setRefresh(Date.now());
-    };
-
-    updateTodo();
-  };
-
-  const handleDelete = id => {
-    const deleteTodo = async () => {
-      const response = await fetch(`${url}/${id}`, {
-        method: 'DELETE',
-        mode: 'cors',
-      });
-
-      console.log(response.status);
-
-      setRefresh(Date.now());
-    };
-
-    deleteTodo();
-  };
-
+  // テーマの切り替え
   const handleTheme = (e) => {
     setTheme(e.target.value);
   };
@@ -1565,7 +1568,7 @@ function App() {
     <div className="App">
       {/* Providerの配下でContextが共有される */}
       <ThemeContext.Provider value={Themes[theme]}>
-        {/* Themeの選択 */}
+        {/* テーマの選択用ラジオボタン */}
         <div className="theme-selector">
           <label><input type="radio" name="theme" value="light" defaultChecked={theme === 'light'} onChange={handleTheme} />Light</label>
           <label><input type="radio" name="theme" value="dark" defaultChecked={theme === 'dark'} onChange={handleTheme} />Dark</label>
@@ -1582,22 +1585,33 @@ function App() {
 }
 
 export default App;
-
 ```
 
+まず、テーマごとのスタイルを定義します。
+Reactでは `style` プロパティに CSSのプロパティ名をkeyに、値をvalueにセットしてあるobjectを渡すとCSSを適用してくれます。
+ただ `background-color` などのハイフンを含むプロパティ名の場合、`backgroundColor` のようにハイフンを取り除いて次の文字を大文字にする必要があります。
+
+`ThemeContext` がテーマを共有するための `Context` になります。
+他のコンポーネントから参照するため、`export` しておきます。
+
+`Context` を共有する範囲を `ThemeContext.Provider`コンポーネントで括ります。
+`Provider` の `value` に現在の値を渡します。
+他コンポーネントは `export` された `ThemeContext` を介して `value` にセットされている値を取得することができます。
+
+`Context` を参照する側は以下のように実装します。
 
 `Todo.js`
 
 ```js
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react'; // useContextを追加
 import TodoForm from './TodoForm';
 import './Todo.css';
 
-import { ThemeContext } from '../App';
+import { ThemeContext } from '../App'; // AppからContextをimport
 
 function Todo(props) {
   const [edit, setEdit] = useState(false);
-  const theme = useContext(ThemeContext);
+  const theme = useContext(ThemeContext); // useContextを使用してContextの値を取り出す
 
   const handleUpdate = (data) => {
     setEdit(false);
@@ -1615,6 +1629,7 @@ function Todo(props) {
   }
 
   return (
+    {/* styleにContextから取り出した値(object)をセット */}
     <div className="todo" style={theme}>
       <div className="check">
         {props.Done && (<span>✓</span>)}
@@ -1633,27 +1648,24 @@ function Todo(props) {
 }
 
 export default Todo;
-
 ```
 
 `TodoForm.js`
 
 ```js
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react'; // useContextを追加
 import './Todo.css';
 
-import { ThemeContext } from '../App';
+import { ThemeContext } from '../App'; // AppからContextをimport
 
 function TodoForm(props = { Done: false, Content: '' }) {
   const [done, setDone] = useState(!!props.Done);
   const [content, setContent] = useState(props.Content || '');
-  const theme = useContext(ThemeContext);
+  const theme = useContext(ThemeContext); // useContextを使用してContextの値を取り出す
 
   const handleSave = () => {
-    const id = props.ID || 'hoge';
     props.onSave({
       ...props,
-      ID: id,
       Done: done,
       Content: content,
     });
@@ -1663,6 +1675,7 @@ function TodoForm(props = { Done: false, Content: '' }) {
   };
 
   return (
+    {/* styleにContextから取り出した値(object)をセット */}
     <div className="todo" style={theme}>
       <div className="check">
         <input type="checkbox" checked={done} onChange={e => setDone(e.target.checked)} />
@@ -1682,8 +1695,8 @@ function TodoForm(props = { Done: false, Content: '' }) {
 }
 
 export default TodoForm;
-
 ```
 
 `App.js` のラジオボタンを変更すると各Todo、Formのテーマが切り替わります。
 
+サンプルが単純なためあまり威力が実感できないかもしれませんが、コンポーネント数が多かったり、孫・ひ孫のコンポーネントに値を渡したい場合に便利な機能です。
