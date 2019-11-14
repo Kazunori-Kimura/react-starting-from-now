@@ -813,6 +813,11 @@ function App() {
 export default App;
 ```
 
+`toISOString` は日付をUTCの文字列 (ISO8601形式) に変換します。
+
+参考: Date.prototype.toISOString() - JavaScript | MDN
+https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
+
 コンポーネントを `map` メソッドなどで複数登録する場合、Reactが個々のコンポーネントを区別できるように `key` プロパティを指定する必要があります。
 
 この状態で表示内容を確認してください。 **hoge** という項目が一つ表示されているはずです。
@@ -843,6 +848,10 @@ function TodoForm(props = { Done: false, Content: '', onSave = () => {} }) {
     };
 
     props.onSave(data);
+
+    // フォームの初期化
+    setDone(false);
+    setContent('');
   };
 
   return (
@@ -1074,7 +1083,7 @@ export default Todo;
 
 編集モードの場合は従来のTodoコンポーネントの変わりに `TodoForm` コンポーネントを表示するようにします。
 `TodoForm` には `Todo` コンポーネントが受け取った `props` を展開してセットします。
-`onSave` にはとりあえず空の関数を渡しておきます。
+とりあえず `onSave` には空の関数を渡しておきます。
 
 Editボタンをクリックしたら `edit` の値を `true` に変更するように実装します。
 
@@ -1095,13 +1104,12 @@ function TodoForm(props = { Done: false, Content: '' }) {
   const [content, setContent] = useState(props.Content || '');
 
   const handleSave = () => {
-    const id = props.ID || 'hoge';
-    props.onSave({
-      ...props,
-      ID: id,
+    const data = {
       Done: done,
       Content: content,
-    });
+    };
+
+    props.onSave(data);
 
     setDone(false);
     setContent('');
@@ -1119,6 +1127,7 @@ function TodoForm(props = { Done: false, Content: '' }) {
         />
       </div>
       <button className="btn" onClick={handleSave}>Save</button>
+      {/* IDが存在する場合はキャンセルボタンを表示 */}
       {props.ID && (
         <button className="btn" onClick={props.onCancel}>Cancel</button>
       )}
@@ -1131,6 +1140,153 @@ export default TodoForm;
 
 最上位にある登録フォームにはキャンセルボタンが不要なので、`ID`の有無で登録か編集かを判定します。
 
+`TodoForm` では `Todo` から渡された `props` にある `onCancel` を実行します。
+
+`onCancel` では `Todo` コンポーネントのstate `edit` を更新するよう実装します。
+
+`Todo.js`
+
+```js
+import React, { useState } from 'react';
+import TodoForm from './TodoForm';
+import './Todo.css';
+
+function Todo(props) {
+  const [edit, setEdit] = useState(false);
+
+  if (edit) {
+    return (
+      <TodoForm
+        {...props}
+        onSave={() => {})}
+        onCancel={() => setEdit(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="todo">
+      <div className="check">
+        {props.Done && (<span>✓</span>)}
+      </div>
+      <div className="body">
+        <div className="header">
+          <span className="date">CreatedBy: {props.CreatedBy}</span>
+          <span className="date">UpdatedBy: {props.UpdatedBy}</span>
+        </div>
+        <div className="content">{props.Content}</div>
+      </div>
+      <button className="btn" onClick={() => setEdit(true)}>Edit</button>
+      <button className="btn" onClick={() => props.onDelete(props.ID)}>Delete</button>
+    </div>
+  );
+}
+
+export default Todo;
+```
+
+ここまで実装できたら、編集モードと通常モードの切り替えができることを確認します。
+
+
+#### 更新処理を実装する
+
+仕上げに更新処理を実装します。
+
+`App` に `Todo` コンポーネントから呼ばれる更新メソッド `handleUpdate` を実装します。
+`handleUpdate` の引数には `handleCreate` 同様、Todoのデータがobjectで渡される想定です。
+
+`App.js`
+
+変更箇所のみ抜粋します
+
+```js
+// ... 省略 ...
+
+const handleUpdate = data => {
+  const now = (new Date()).toISOString();
+  data.UpdatedAt = now;
+
+  setTodos(todos.map(item => {
+    // IDが一致する要素を差し替える
+    if (item.ID === data.ID) {
+      return data;
+    }
+    return item;
+  }));
+};
+
+// ... 省略 ...
+
+<Todo key={item.ID} {...item} onSave={handleUpdate} onDelete={handleDelete} />
+
+// ... 省略 ...
+```
+
+更新処理本体となる `handleUpdate` を追加します。
+stateのTodo配列のうち、受け取ったデータとIDが一致するものを差し替えて、新しい配列をstateにセットしています。
+
+Todoコンポーネントの `onSave` に `handleUpdate` を渡します。
+
+Todoコンポーネントでは受け取った `onSave` をさらに `TodoForm` に渡しますが、更新が完了したら自身の編集モードを終了するようフラグを更新しておきます。
+
+`Todo.js`
+
+```js
+import React, { useState } from 'react';
+import TodoForm from './TodoForm';
+import './Todo.css';
+
+function Todo(props) {
+  const [edit, setEdit] = useState(false);
+
+  // TodoFormに引き渡す更新メソッド
+  const handleUpdate = (data) => {
+    props.onSave(data);
+    setEdit(false);
+  };
+
+  if (edit) {
+    return (
+      <TodoForm
+        {...props}
+        onSave={handleUpdate}
+        onCancel={() => setEdit(false)}
+      />
+    );
+  }
+
+  // ... 省略 ...
+```
+
+`TodoForm` コンポーネントでは `Done`, `Content` だけでなく `ID` や `CreatedAt` などの値も引き渡すように修正します。
+面倒なので受け取った `props` をすべてTodoデータに展開してしまいます。
+
+`TodoForm.js`
+
+```js
+import React, { useState } from 'react';
+import './Todo.css';
+
+function TodoForm(props = { Done: false, Content: '' }) {
+  const [done, setDone] = useState(!!props.Done);
+  const [content, setContent] = useState(props.Content || '');
+
+  const handleSave = () => {
+    props.onSave({
+      ...props, // 受け取ったpropsを展開
+      Done: done,
+      Content: content,
+    });
+
+    setDone(false);
+    setContent('');
+  };
+```
+
+これで入力した値が `TodoForm` -> `Todo` -> `App` に渡るように実装できました。
+
+追加、更新、削除が問題なく動作することを確認してください。
+
 ### APIを呼ぶ
 
 副作用フックの利用法 – React
@@ -1138,7 +1294,7 @@ https://ja.reactjs.org/docs/hooks-effect.html
 
 > データの取得、購読の設定、あるいは React コンポーネント内の DOM の手動での変更、といったものはすべて副作用の例です。
 
-`useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出される
+`useEffect` の第2引数を空の配列にすると、`App` コンポーネントが描画されたときにだけ呼び出されます。
 
 ```js
 import React, { useState, useEffect } from 'react';
